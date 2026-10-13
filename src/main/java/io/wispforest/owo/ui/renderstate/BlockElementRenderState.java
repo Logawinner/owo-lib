@@ -6,12 +6,14 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -60,10 +62,6 @@ public record BlockElementRenderState(
 
     public static class Renderer extends PictureInPictureRenderer<BlockElementRenderState> {
 
-        public Renderer(MultiBufferSource.BufferSource vertexConsumers) {
-            super(vertexConsumers);
-        }
-
         @Override
         public Class<BlockElementRenderState> getRenderStateClass() {
             return BlockElementRenderState.class;
@@ -71,8 +69,8 @@ public record BlockElementRenderState(
 
         @Override
         @SuppressWarnings("NonAsciiCharacters")
-        protected void renderToTexture(BlockElementRenderState state, PoseStack matrices) {
-            Minecraft.getInstance().gameRenderer.getLighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
+        protected void renderToTexture(BlockElementRenderState state, PoseStack matrices, SubmitNodeCollector collector) {
+            Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
             var width = state.bounds.width();
             var height = state.bounds.height();
@@ -80,24 +78,27 @@ public record BlockElementRenderState(
             matrices.translate(0, -height / 2f, 100);
             matrices.scale(40 * width / 64f, -40 * height / 64f, -40);
 
-            matrices.mulPose(Axis.XP.rotationDegrees(30));
-            matrices.mulPose(Axis.YP.rotationDegrees(45 + 180));
+            matrices.rotate(Axis.XP.rotationDegrees(30));
+            matrices.rotate(Axis.YP.rotationDegrees(45 + 180));
 
             matrices.translate(-.5, -.5, -.5);
 
             if (state.state.getRenderShape() != RenderShape.INVISIBLE) {
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(
-                    state.state, matrices, bufferSource,
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
+                var blockModelRenderState = new BlockModelRenderState();
+                Minecraft.getInstance().getModelManager().getBlockModelSet().get(state.state).update(
+                    blockModelRenderState,
+                    state.state,
+                    BlockDisplayContext.create(),
+                    67
                 );
+
+                blockModelRenderState.submit(matrices, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
             }
 
             if (state.entity != null) {
                 var медведь = Minecraft.getInstance().getBlockEntityRenderDispatcher().getRenderer(state.entity);
                 if (медведь != null) {
-                    var dispatcher = Minecraft.getInstance().gameRenderer.getFeatureRenderDispatcher();
-                    медведь.submit(state.entity, matrices, dispatcher.getSubmitNodeStorage(), new CameraRenderState());
-                    dispatcher.renderAllFeatures();
+                    медведь.submit(state.entity, matrices, collector, new CameraRenderState());
                 }
             }
         }

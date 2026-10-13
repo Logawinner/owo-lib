@@ -1,14 +1,15 @@
 package io.wispforest.owo.braid.core;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import io.wispforest.owo.braid.core.element.BraidDashedLineElement;
 import io.wispforest.owo.mixin.braid.Matrix3x2fStackAccessor;
-import io.wispforest.owo.mixin.ui.access.GuiGraphicsAccessor;
+import io.wispforest.owo.mixin.ui.access.GuiGraphicsExtractorAccessor;
 import io.wispforest.owo.ui.core.OwoUIGraphics;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.state.GuiRenderState;
+
+import net.minecraft.client.renderer.state.gui.GuiRenderState;
 import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix3x2fc;
@@ -20,21 +21,21 @@ public class BraidGraphics extends OwoUIGraphics {
     private final Surface surface;
 
     protected BraidGraphics(Minecraft client, GuiRenderState renderState, int mouseX, int mouseY, Consumer<Runnable> setTooltipDrawer, Surface surface) {
-        super(client, renderState, mouseX, mouseY, setTooltipDrawer);
         this.surface = surface;
+        super(client, renderState, mouseX, mouseY, setTooltipDrawer);
     }
 
-    public static BraidGraphics create(GuiGraphics grpahics, Surface surface) {
+    public static BraidGraphics create(GuiGraphicsExtractor graphics, Surface surface) {
         var braidContext = new BraidGraphics(
             Minecraft.getInstance(),
-            grpahics.guiRenderState,
-            ((GuiGraphicsAccessor) grpahics).owo$getMouseX(),
-            ((GuiGraphicsAccessor) grpahics).owo$getMouseY(),
-            ((GuiGraphicsAccessor) grpahics)::owo$setDeferredTooltip,
+            graphics.guiRenderState,
+            ((GuiGraphicsExtractorAccessor) graphics).owo$getMouseX(),
+            ((GuiGraphicsExtractorAccessor) graphics).owo$getMouseY(),
+            ((GuiGraphicsExtractorAccessor) graphics)::owo$setDeferredTooltip,
             surface
         );
-        ((GuiGraphicsAccessor) braidContext).owo$setScissorStack(((GuiGraphicsAccessor) grpahics).owo$getScissorStack());
-        ((GuiGraphicsAccessor) braidContext).owo$setPose(new MatrixStack(((GuiGraphicsAccessor) grpahics).owo$getPose()));
+        ((GuiGraphicsExtractorAccessor) braidContext).owo$setScissorStack(((GuiGraphicsExtractorAccessor) graphics).owo$getScissorStack());
+        ((GuiGraphicsExtractorAccessor) braidContext).owo$setPose(new MatrixStack(((GuiGraphicsExtractorAccessor) graphics).owo$getPose()));
 
         return braidContext;
     }
@@ -58,7 +59,7 @@ public class BraidGraphics extends OwoUIGraphics {
     }
 
     public void drawDashedLine(RenderPipeline pipeline, double x1, double y1, double x2, double y2, double thiccness, double segmentLength, Color color) {
-        this.guiRenderState.submitGuiElement(new BraidDashedLineElement(
+        this.guiRenderState.addGuiElement(new BraidDashedLineElement(
             color,
             thiccness,
             segmentLength,

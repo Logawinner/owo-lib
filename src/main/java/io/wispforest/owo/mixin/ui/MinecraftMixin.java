@@ -4,39 +4,24 @@ import com.mojang.blaze3d.platform.Window;
 import io.wispforest.owo.ui.event.ClientRenderCallback;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
 import io.wispforest.owo.ui.renderstate.BlurQuadElementRenderState;
-import io.wispforest.owo.ui.util.DisposableScreen;
-import net.minecraft.CrashReport;
-import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.main.GameConfig;
-import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
-
-    @Unique
-    private final Set<DisposableScreen> screensToDispose = new HashSet<>();
 
     @Shadow
     @Final
     private Window window;
 
-    @Shadow
-    @Nullable
-    public Screen screen;
-
-    @Inject(method = "resizeDisplay", at = @At("TAIL"))
+    @Inject(method = "resizeGui", at = @At("TAIL"))
     private void captureResize(CallbackInfo ci) {
         WindowResizeCallback.EVENT.invoker().onResized((Minecraft) (Object) this, this.window);
     }
@@ -46,44 +31,17 @@ public class MinecraftMixin {
         ClientRenderCallback.BEFORE.invoker().onRender((Minecraft) (Object) this);
     }
 
-    @Inject(method = "runTick", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;updateDisplay(Lcom/mojang/blaze3d/TracyFrameCapture;)V", shift = At.Shift.AFTER))
+    @Inject(method = "renderFrame", at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/device/GpuSurface;present()V", shift = At.Shift.AFTER))
     private void afterRender(boolean tick, CallbackInfo ci) {
         ClientRenderCallback.AFTER.invoker().onRender((Minecraft) (Object) this);
     }
 
-    @Inject(method = "runTick", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;frameTimeNs:J"))
+    @Inject(method = "renderFrame", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;frameTimeNs:J", opcode = Opcodes.PUTFIELD))
     private void beforeSwap(boolean tick, CallbackInfo ci) {
         ClientRenderCallback.BEFORE_SWAP.invoker().onRender((Minecraft) (Object) this);
     }
 
-    @Inject(method = "setScreen", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;removed()V"))
-    private void captureSetScreen(Screen screen, CallbackInfo ci) {
-        if (screen != null && this.screen instanceof DisposableScreen disposable) {
-            this.screensToDispose.add(disposable);
-        } else if (screen == null) {
-            if (this.screen instanceof DisposableScreen disposable) {
-                this.screensToDispose.add(disposable);
-            }
-
-            for (var disposable : this.screensToDispose) {
-                try {
-                    disposable.dispose();
-                } catch (Throwable error) {
-                    var report = new CrashReport("Failed to dispose screen", error);
-                    report.addCategory("Screen being disposed: ")
-                            .setDetail("Screen class", disposable.getClass())
-                            .setDetail("Screen being closed", this.screen)
-                            .setDetail("Total screens to dispose", this.screensToDispose.size());
-
-                    throw new ReportedException(report);
-                }
-            }
-
-            this.screensToDispose.clear();
-        }
-    }
-
-    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;initRenderer(JIZLcom/mojang/blaze3d/shaders/ShaderSource;Z)V", shift = At.Shift.AFTER))
+    @Inject(method = "<init>", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;window:Lcom/mojang/blaze3d/platform/Window;", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER))
     private void initBlurRenderer(GameConfig args, CallbackInfo ci) {
         BlurQuadElementRenderState.initialize((Minecraft) (Object) this);
     }

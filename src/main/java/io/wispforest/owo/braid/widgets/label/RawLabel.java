@@ -56,7 +56,7 @@ public class RawLabel extends LeafInstanceWidget {
         private int renderTextHeight = 0;
 
         protected Function<Style, Boolean> textClickHandler = style -> {
-            return style != null && OwoUIGraphics.utilityScreen().handleTextClick(style, Minecraft.getInstance().screen);
+            return style != null && OwoUIGraphics.utilityScreen().handleTextClick(style, Minecraft.getInstance().gui.screen());
         };
 
         public Instance(RawLabel widget) {
@@ -150,7 +150,7 @@ public class RawLabel extends LeafInstanceWidget {
             var yOffset = this.widget.style.textAlignment().alignVertical(this.transform.height(), this.renderTextHeight);
 
             for (int lineIdx = 0; lineIdx < this.renderText.size(); lineIdx++) {
-                graphics.drawString(
+                graphics.text(
                     font,
                     this.renderText.get(lineIdx),
                     (int) this.widget.style.textAlignment().alignHorizontal(this.transform.width(), this.renderTextWidths.getDouble(lineIdx)),
@@ -196,7 +196,7 @@ public class RawLabel extends LeafInstanceWidget {
 
         @Override
         public boolean onMouseDown(double x, double y, int button, KeyModifiers modifiers) {
-            if (button != 0) return MouseListener.super.onMouseDown(x, y, button, modifiers);
+            if (button != com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT) return MouseListener.super.onMouseDown(x, y, button, modifiers);
             return this.textClickHandler.apply(this.getStyleAt(x, y));
         }
 

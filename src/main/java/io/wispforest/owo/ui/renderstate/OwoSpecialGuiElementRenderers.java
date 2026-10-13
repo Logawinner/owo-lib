@@ -3,17 +3,17 @@ package io.wispforest.owo.ui.renderstate;
 import io.wispforest.owo.braid.core.element.BraidBlockElement;
 import io.wispforest.owo.braid.core.element.BraidEntityElement;
 import io.wispforest.owo.braid.core.element.BraidItemElement;
-import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry;
 
 public class OwoSpecialGuiElementRenderers {
     public static void init() {
-        SpecialGuiElementRegistry.register(ctx -> new CubeMapElementRenderState.Renderer(ctx.vertexConsumers()));
-        SpecialGuiElementRegistry.register(ctx -> new EntityElementRenderState.Renderer(ctx.vertexConsumers()));
-        SpecialGuiElementRegistry.register(ctx -> new BlockElementRenderState.Renderer(ctx.vertexConsumers()));
-        SpecialGuiElementRegistry.register(ctx -> new OwoItemElementRenderState.Renderer(ctx.vertexConsumers()));
+        PictureInPictureRendererRegistry.register(ctx -> new CubeMapElementRenderState.Renderer());
+        PictureInPictureRendererRegistry.register(ctx -> new EntityElementRenderState.Renderer());
+        PictureInPictureRendererRegistry.register(ctx -> new BlockElementRenderState.Renderer());
+        PictureInPictureRendererRegistry.register(ctx -> new OwoItemElementRenderState.Renderer());
 
-        SpecialGuiElementRegistry.register(ctx -> new BraidEntityElement.Renderer(ctx.vertexConsumers()));
-        SpecialGuiElementRegistry.register(ctx -> new BraidBlockElement.Renderer(ctx.vertexConsumers()));
-        SpecialGuiElementRegistry.register(ctx -> new BraidItemElement.Renderer(ctx.vertexConsumers()));
+        PictureInPictureRendererRegistry.register(ctx -> new BraidEntityElement.Renderer());
+        PictureInPictureRendererRegistry.register(ctx -> new BraidBlockElement.Renderer());
+        PictureInPictureRendererRegistry.register(ctx -> new BraidItemElement.Renderer());
     }
 }

@@ -4,20 +4,20 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import io.wispforest.owo.braid.core.BraidRenderPipelines;
 import io.wispforest.owo.braid.util.BraidGuiRenderer;
 import io.wispforest.owo.util.pond.BraidGuiRendererExtension;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
-import net.minecraft.client.renderer.CachedOrthoProjectionMatrixBuffer;
+import net.minecraft.client.renderer.Projection;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import org.jspecify.annotations.Nullable;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -38,39 +38,42 @@ public class GuiRendererMixin implements BraidGuiRendererExtension {
 
     // ---
 
-    @WrapOperation(method = "draw", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/CachedOrthoProjectionMatrixBuffer;getBuffer(FF)Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"))
-    private GpuBufferSlice injectSurfaceDimensions(CachedOrthoProjectionMatrixBuffer instance, float width, float height, Operation<GpuBufferSlice> original) {
-        if (this.target == null) return original.call(instance, width, height);
+    @WrapOperation(method = "draw", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/Projection;setupOrtho(FFFFZ)V"))
+    private void injectSurfaceDimensions(Projection instance, float zNear, float zFar, float width, float height, boolean invertY, Operation<Void> original) {
+        if (this.target == null) {
+            original.call(instance, zNear, zFar, width, height, invertY);
+            return;
+        }
 
         var surface = this.target.surface();
-        return original.call(instance, (float) surface.width(), (float) surface.height());
+        original.call(instance, zNear, zFar, (float) surface.width(), (float) surface.height(), invertY);
     }
 
-    @ModifyExpressionValue(method = "draw", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"))
+    @ModifyExpressionValue(method = "draw", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"))
     private RenderTarget injectFramebuffer(RenderTarget original) {
         if (this.target == null) return original;
-        return this.target.framebuffer();
+        return this.target.renderTarget();
     }
 
-    @ModifyExpressionValue(method = "enableScissor", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;getHeight()I"))
+    @ModifyExpressionValue(method = "enableScissor", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/state/WindowRenderState;height:I", opcode = Opcodes.GETFIELD))
     private int injectSurfaceHeightForScissor(int original) {
         if (this.target == null) return original;
-        return this.target.framebuffer().height;
+        return this.target.renderTarget().height;
     }
 
-    @ModifyExpressionValue(method = "enableScissor", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;getGuiScale()I"))
+    @ModifyExpressionValue(method = "enableScissor", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/state/WindowRenderState;guiScale:I", opcode = Opcodes.GETFIELD))
     private int injectSurfaceScaleForScissor(int original) {
         if (this.target == null) return original;
         return (int) this.target.surface().scaleFactor();
     }
 
-    @ModifyExpressionValue(method = "preparePictureInPicture", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;getGuiScale()I"))
+    @ModifyExpressionValue(method = "preparePictureInPicture", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/state/WindowRenderState;guiScale:I", opcode = Opcodes.GETFIELD))
     private int injectSurfaceScaleForPIP(int original) {
         if (this.target == null) return original;
         return (int) this.target.surface().scaleFactor();
     }
 
-    @ModifyExpressionValue(method = "getGuiScaleInvalidatingItemAtlasIfChanged", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;getGuiScale()I"))
+    @ModifyExpressionValue(method = "getGuiScaleInvalidatingItemAtlasIfChanged", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/state/WindowRenderState;guiScale:I", opcode = Opcodes.GETFIELD))
     private int injectSurfaceScaleForItemAtlas(int original) {
         if (this.target == null) return original;
         return (int) this.target.surface().scaleFactor();
@@ -79,8 +82,8 @@ public class GuiRendererMixin implements BraidGuiRendererExtension {
     // ---
 
     @ModifyArg(
-        method = "executeDraw(Lnet/minecraft/client/gui/render/GuiRenderer$Draw;Lcom/mojang/blaze3d/systems/RenderPass;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/vertex/VertexFormat$IndexType;)V",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderPass;bindTexture(Ljava/lang/String;Lcom/mojang/blaze3d/textures/GpuTextureView;Lcom/mojang/blaze3d/textures/GpuSampler;)V", ordinal = 0),
+        method = "executeDraw(Lnet/minecraft/client/gui/render/GuiRenderer$Draw;Lcom/mojang/renderpearl/api/commands/RenderPass;)V",
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setUniform(Ljava/lang/String;Lcom/mojang/renderpearl/api/textures/GpuTextureView;Lcom/mojang/renderpearl/api/textures/GpuSampler;)V", ordinal = 0),
         index = 2
     )
     private @Nullable GpuSampler injectTextureFilter(GpuSampler sampler, @Local(argsOnly = true) GuiRenderer.Draw draw) {

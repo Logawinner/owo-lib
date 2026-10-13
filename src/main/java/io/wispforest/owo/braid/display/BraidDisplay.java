@@ -1,7 +1,8 @@
 package io.wispforest.owo.braid.display;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wispforest.owo.Owo;
 import io.wispforest.owo.braid.core.AppState;
@@ -77,7 +78,7 @@ public class BraidDisplay {
         .withLocation(Owo.id("pipeline/braid_display"))
         .withShaderDefine("ALPHA_CUTOUT", 0.1F)
         .withCull(false)
-        .withBlend(BlendFunction.TRANSLUCENT)
+        .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
         .build();
 
     private static final Function<TextureSurface, RenderType> RENDER_TYPE = surface -> RenderTypeInvoker.owo$of(

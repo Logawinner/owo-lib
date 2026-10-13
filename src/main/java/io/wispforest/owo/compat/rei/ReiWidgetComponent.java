@@ -4,6 +4,7 @@ import io.wispforest.owo.ui.base.BaseUIComponent;
 import io.wispforest.owo.ui.core.OwoUIGraphics;
 import io.wispforest.owo.ui.core.ParentUIComponent;
 import io.wispforest.owo.ui.core.Sizing;
+import me.shedaniel.rei.api.client.gui.compat.GuiGraphics;
 import me.shedaniel.rei.api.client.gui.widgets.WidgetWithBounds;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -35,9 +36,9 @@ public class ReiWidgetComponent extends BaseUIComponent {
         this.applyToWidget();
     }
 
-    @Override
+        @Override
     public void draw(OwoUIGraphics graphics, int mouseX, int mouseY, float partialTicks, float delta) {
-        this.widget.render(graphics, mouseX, mouseY, partialTicks);
+        this.widget.render(GuiGraphics.of(graphics), mouseX, mouseY, partialTicks);
     }
 
     @Override

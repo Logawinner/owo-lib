@@ -47,7 +47,7 @@ public abstract class ResultSlotMixin {
             int excess = remainderStack.getCount() - remainderStack.getMaxStackSize();
             remainderStack.shrink(excess);
 
-            this.player.getInventory().placeItemBackInInventory(remainderStack.copyWithCount(excess));
+            this.player.getInventory().placeItemBackInInventory(remainderStack.copyWithCount(excess), net.minecraft.util.Prediction.PREDICTED);
         }
     }
 
@@ -100,7 +100,7 @@ public abstract class ResultSlotMixin {
                         var item = input.getItem(i).getItem();
                         if (!owoRemainders.containsKey(item)) continue;
 
-                        remainders.set(i, owoRemainders.get(item).copy());
+                        remainders.set(i, owoRemainders.get(item).create());
                     }
                 }
 

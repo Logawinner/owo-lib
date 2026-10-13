@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import xyz.nucleoid.server.translations.impl.language.LanguageReader;
 
@@ -15,6 +16,7 @@ import java.util.function.Predicate;
 
 import static io.wispforest.owo.util.DataExtensionUtil.coerceJson;
 
+@Pseudo
 @Mixin(LanguageReader.class)
 public abstract class LanguageReaderMixin {
 
@@ -22,13 +24,13 @@ public abstract class LanguageReaderMixin {
         method = "collectDataPackTranslations",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/server/packs/resources/ResourceManager;listResources(Ljava/lang/String;Ljava/util/function/Predicate;)Ljava/util/Map;"
+            target = "Lnet/minecraft/server/packs/resources/ResourceManager;listResources(Ljava/lang/String;Lnet/minecraft/server/packs/resources/ResourceManager$Selector;)Ljava/util/Map;"
         )
     )
     private static Map<Identifier, Resource> json5$collectDataPackTranslations(
         ResourceManager instance,
         String s,
-        Predicate<Identifier> identifierPredicate,
+        ResourceManager.Selector identifierPredicate,
         Operation<Map<Identifier, Resource>> original
     ) {
         var base = original.call(instance, s, identifierPredicate);

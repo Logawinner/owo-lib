@@ -19,10 +19,10 @@ import me.shedaniel.rei.api.common.display.DisplaySerializer;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
-import net.minecraft.world.item.Items;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.item.Items;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,24 +38,24 @@ public class UiCategory implements DisplayCategory<Display> {
         var root = adapter.rootComponent();
 
         root.horizontalAlignment(HorizontalAlignment.CENTER)
-                .surface(Surface.DARK_PANEL)
-                .padding(Insets.of(8));
+            .surface(Surface.DARK_PANEL)
+            .padding(Insets.of(8));
 
         var inner = UIContainers.verticalFlow(Sizing.fill(100), Sizing.content());
         inner.horizontalAlignment(HorizontalAlignment.CENTER).surface(Surface.flat(0xFF00FFAF));
 
         inner.child(UIComponents.label(Component.nullToEmpty("A demonstration\ninside REI"))
-                .color(Color.BLACK)
-                .positioning(Positioning.absolute(3, 3))
+            .color(Color.BLACK)
+            .positioning(Positioning.absolute(3, 3))
         );
 
         var animation = inner.horizontalSizing().animate(250, Easing.QUADRATIC, Sizing.fill(65));
         inner.child(UIComponents.button(Component.nullToEmpty("shrink"), (ButtonComponent button) -> animation.forwards())
-                .margins(Insets.vertical(25))
-                .horizontalSizing(Sizing.fixed(60)));
+            .margins(Insets.vertical(25))
+            .horizontalSizing(Sizing.fixed(60)));
         inner.child(UIComponents.button(Component.nullToEmpty("grow"), (ButtonComponent button) -> animation.backwards())
-                .margins(Insets.vertical(25))
-                .horizontalSizing(Sizing.fixed(60)));
+            .margins(Insets.vertical(25))
+            .horizontalSizing(Sizing.fixed(60)));
 
         inner.child(adapter.wrap(Widgets.createSlot(new Point(0, 0)).entry(EntryStacks.of(Items.ECHO_SHARD))));
 

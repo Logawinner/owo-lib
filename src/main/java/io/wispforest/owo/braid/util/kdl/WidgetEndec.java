@@ -21,12 +21,12 @@ import io.wispforest.owo.braid.widgets.grid.Grid;
 import io.wispforest.owo.braid.widgets.label.Label;
 import io.wispforest.owo.braid.widgets.label.LabelStyle;
 import io.wispforest.owo.braid.widgets.object.BlockWidget;
-import io.wispforest.owo.braid.widgets.object.EntityWidget;
+import io.wispforest.owo.braid.widgets.object.entity.EntityDisplayMode;
 import io.wispforest.owo.braid.widgets.object.ItemStackWidget;
 import io.wispforest.owo.braid.widgets.stack.Stack;
 import io.wispforest.owo.braid.widgets.stack.StackBase;
 import io.wispforest.owo.serialization.endec.MinecraftEndecs;
-import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.sprite.SpriteId;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -256,7 +256,7 @@ public class WidgetEndec {
             StructEndecBuilder.of(
                 MinecraftEndecs.IDENTIFIER.fieldOf("@argument", s -> s.spriteIdentifier.texture()),
                 MinecraftEndecs.IDENTIFIER.optionalFieldOf("atlas", s -> s.spriteIdentifier.atlasLocation(), SpriteWidget.GUI_ATLAS_ID),
-                (id, atlas) -> new SpriteWidget(new Material(atlas, id))
+                (id, atlas) -> new SpriteWidget(new SpriteId(atlas, id))
             )
         );
 
@@ -303,7 +303,7 @@ public class WidgetEndec {
             "block",
             BlockWidget.class,
             StructEndecBuilder.of(
-                BraidKdlEndecs.BLOCK_STRING.fieldOf("@argument", s -> new BlockStateParser.BlockResult(s.blockState, s.blockState.getValues(), s.blockEntityNbt)),
+                BraidKdlEndecs.BLOCK_STRING.fieldOf("@argument", s -> { throw new UnsupportedOperationException("cannot serialize a block widget"); }),
                 blockResult -> new BlockWidget(blockResult.blockState(), blockResult.nbt())
             )
         );
@@ -314,7 +314,7 @@ public class WidgetEndec {
             StructEndecBuilder.of(
                 Endec.DOUBLE.optionalFieldOf("scale", s -> s.scale, 1.0),
                 KdlEntityWidget.EntitySpec.STRING_ENDEC.fieldOf("@argument", s -> s.spec),
-                Endec.forEnum(EntityWidget.DisplayMode.class, false).optionalFieldOf("mode", s -> s.mode, EntityWidget.DisplayMode.FIXED),
+                Endec.forEnum(EntityDisplayMode.class, false).optionalFieldOf("mode", s -> s.mode, EntityDisplayMode.FIXED),
                 Endec.BOOLEAN.optionalFieldOf("scale_to_fit", s -> s.scaleToFit, true),
                 Endec.BOOLEAN.optionalFieldOf("show_nametag", s -> s.showNametag, false),
                 KdlEntityWidget::new

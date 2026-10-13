@@ -5,12 +5,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -73,10 +75,6 @@ public record BraidBlockElement(
 
     public static class Renderer extends PictureInPictureRenderer<BraidBlockElement> {
 
-        public Renderer(MultiBufferSource.BufferSource vertexConsumers) {
-            super(vertexConsumers);
-        }
-
         @Override
         public Class<BraidBlockElement> getRenderStateClass() {
             return BraidBlockElement.class;
@@ -84,24 +82,27 @@ public record BraidBlockElement(
 
         @Override
         @SuppressWarnings("NonAsciiCharacters")
-        protected void renderToTexture(BraidBlockElement state, PoseStack matrices) {
-            Minecraft.getInstance().gameRenderer.getLighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
+        protected void renderToTexture(BraidBlockElement state, PoseStack matrices, SubmitNodeCollector collector) {
+            Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
             matrices.mulPose(state.transform);
 
             if (state.block.getRenderShape() != RenderShape.INVISIBLE) {
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(
-                    state.block, matrices, bufferSource,
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
+                var blockModelRenderState = new BlockModelRenderState();
+                Minecraft.getInstance().getModelManager().getBlockModelSet().get(state.block).update(
+                    blockModelRenderState,
+                    state.block,
+                    BlockDisplayContext.create(),
+                    67
                 );
+
+                blockModelRenderState.submit(matrices, collector, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
             }
 
             if (state.entity != null) {
                 var медведь = Minecraft.getInstance().getBlockEntityRenderDispatcher().getRenderer(state.entity);
                 if (медведь != null) {
-                    var dispatcher = Minecraft.getInstance().gameRenderer.getFeatureRenderDispatcher();
-                    медведь.submit(state.entity, matrices, dispatcher.getSubmitNodeStorage(), new CameraRenderState());
-                    dispatcher.renderAllFeatures();
+                    медведь.submit(state.entity, matrices, collector, new CameraRenderState());
                 }
             }
         }

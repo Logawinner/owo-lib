@@ -8,7 +8,7 @@ import io.wispforest.owo.ui.util.DisposableScreen;
 import io.wispforest.owo.ui.util.UIErrorToast;
 import io.wispforest.owo.util.pond.OwoSlotExtension;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -21,7 +21,6 @@ import net.minecraft.world.inventory.Slot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -43,6 +42,11 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
      * itself on the next frame
      */
     protected boolean invalid = false;
+
+
+    protected BaseOwoContainerScreen(S menu, Inventory inventory, Component title, int imageWidth, int imageHeight) {
+        super(menu, inventory, title, imageWidth, imageHeight);
+    }
 
     protected BaseOwoContainerScreen(S menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -92,17 +96,17 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
             }
         }
 
-        ScreenEvents.afterRender(this).register((screen, drawContext, mouseX, mouseY, tickDelta) -> {
+        ScreenEvents.afterExtract(this).register((screen, drawContext, mouseX, mouseY, tickDelta) -> {
             this.drawComponentTooltip(drawContext, mouseX, mouseY, tickDelta);
         });
     }
 
     /**
      * Draw the tooltip of this screen's component tree, invoked
-     * by {@link ScreenEvents#afterRender(Screen)} so that tooltips are
+     * by {@link ScreenEvents#afterExtract(Screen)} so that tooltips are
      * properly rendered above content
      */
-    protected void drawComponentTooltip(GuiGraphics graphics, int mouseX, int mouseY, float tickDelta) {
+    protected void drawComponentTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float tickDelta) {
         if (this.uiAdapter != null) this.uiAdapter.drawTooltip(graphics, mouseX, mouseY, tickDelta);
     }
 
@@ -200,13 +204,13 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {}
 
     @Override
-    public void render(GuiGraphics vanillaContext, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor vanillaContext, int mouseX, int mouseY, float a) {
         var context = OwoUIGraphics.of(vanillaContext);
         if (!this.invalid) {
-            super.render(context, mouseX, mouseY, delta);
+            super.extractRenderState(context, mouseX, mouseY, a);
 
             if (this.uiAdapter.enableInspector) {
                 for (int i = 0; i < this.menu.slots.size(); i++) {
@@ -224,7 +228,7 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
                 }
             }
 
-            this.renderTooltip(context, mouseX, mouseY);
+            this.extractTooltip(context, mouseX, mouseY);
         } else {
             this.onClose();
         }
@@ -280,9 +284,6 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
         if (this.uiAdapter != null) this.uiAdapter.dispose();
     }
 
-    @Override
-    protected void renderBg(GuiGraphics context, float delta, int mouseX, int mouseY) {}
-
     public class SlotComponent extends BaseUIComponent {
 
         protected final Slot slot;
@@ -296,12 +297,7 @@ public abstract class BaseOwoContainerScreen<R extends ParentUIComponent, S exte
         public void draw(OwoUIGraphics graphics, int mouseX, int mouseY, float partialTicks, float delta) {
             this.didDraw = true;
 
-            int[] scissor = new int[4];
-            GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor);
-
-            ((OwoSlotExtension) this.slot).owo$setScissorArea(PositionedRectangle.of(
-                scissor[0], scissor[1], scissor[2], scissor[3]
-            ));
+            ((OwoSlotExtension) this.slot).owo$setScissorArea(graphics.scissorStack.peek());
         }
 
         @Override

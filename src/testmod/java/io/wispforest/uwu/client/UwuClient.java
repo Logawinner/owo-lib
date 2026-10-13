@@ -2,8 +2,8 @@ package io.wispforest.uwu.client;
 
 import io.wispforest.owo.braid.core.LayoutAxis;
 import io.wispforest.owo.braid.util.BraidHudElement;
-import io.wispforest.owo.braid.util.layers.BraidLayersBinding;
 import io.wispforest.owo.braid.util.BraidTooltipComponent;
+import io.wispforest.owo.braid.util.layers.BraidLayersBinding;
 import io.wispforest.owo.braid.widgets.basic.Box;
 import io.wispforest.owo.braid.widgets.basic.Clip;
 import io.wispforest.owo.braid.widgets.basic.Sized;
@@ -14,10 +14,10 @@ import io.wispforest.owo.network.OwoNetChannel;
 import io.wispforest.owo.particles.ClientParticles;
 import io.wispforest.owo.particles.systems.ParticleSystemController;
 import io.wispforest.owo.ui.component.ButtonComponent;
-import io.wispforest.owo.ui.component.UIComponents;
 import io.wispforest.owo.ui.component.EntityComponent;
-import io.wispforest.owo.ui.container.UIContainers;
+import io.wispforest.owo.ui.component.UIComponents;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.UIContainers;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.hud.Hud;
 import io.wispforest.owo.ui.layers.Layer;
@@ -25,30 +25,30 @@ import io.wispforest.owo.ui.layers.Layers;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.util.UISounds;
 import io.wispforest.uwu.Uwu;
-import io.wispforest.uwu.client.braid.TestSelector;
+import io.wispforest.uwu.client.braid.Amogus;
 import io.wispforest.uwu.items.UwuBraidItem;
 import io.wispforest.uwu.network.UwuNetworkExample;
 import io.wispforest.uwu.network.UwuOptionalNetExample;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.allay.Allay;
-import net.minecraft.world.item.Items;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.allay.Allay;
+import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -69,17 +69,17 @@ public class UwuClient implements ClientModInitializer {
 //        HandledScreens.register(EPIC_SCREEN_HANDLER_TYPE, EpicHandledModelScreen::new);
 
         final var binding = new KeyMapping("key.uwu.hud_test", GLFW.GLFW_KEY_J, KeyMapping.Category.MISC);
-        KeyBindingHelper.registerKeyBinding(binding);
+        KeyMappingHelper.registerKeyMapping(binding);
 
         final var bindingButCooler = new KeyMapping("key.uwu.hud_test_two", GLFW.GLFW_KEY_K, KeyMapping.Category.MISC);
-        KeyBindingHelper.registerKeyBinding(bindingButCooler);
+        KeyMappingHelper.registerKeyMapping(bindingButCooler);
 
         final var hudComponentId = Identifier.fromNamespaceAndPath("uwu", "test_element");
         final Supplier<UIComponent> hudComponent = () ->
             UIContainers.verticalFlow(Sizing.content(), Sizing.content())
                 .child(UIComponents.item(Items.DIAMOND.getDefaultInstance()).margins(Insets.of(3)))
                 .child(UIComponents.label(Component.literal("epic stuff in hud")))
-                .child(UIComponents.entity(Sizing.fixed(50), EntityType.ALLAY, null))
+                .child(UIComponents.entity(Sizing.fixed(50), EntityTypes.ALLAY, null))
                 .alignment(HorizontalAlignment.CENTER, VerticalAlignment.CENTER)
                 .padding(Insets.of(5))
                 .surface(Surface.PANEL)
@@ -90,7 +90,7 @@ public class UwuClient implements ClientModInitializer {
         final Supplier<UIComponent> coolerComponent = () -> UIModel.load(Path.of("../src/testmod/resources/assets/uwu/owo_ui/test_element_two.xml")).expandTemplate(FlowLayout.class, "hud-element", Map.of());
         Hud.add(coolerComponentId, coolerComponent);
 
-        TooltipComponentCallback.EVENT.register(data -> {
+        ClientTooltipComponentCallback.EVENT.register(data -> {
             if (data instanceof UwuBraidItem.Tooltip tooltip) {
                 var random = new Random(System.currentTimeMillis() / 450);
                 return new BraidTooltipComponent(new Sized(
@@ -103,7 +103,7 @@ public class UwuClient implements ClientModInitializer {
                                 LayoutAxis.VERTICAL,
                                 6,
                                 Grid.CellFit.loose(),
-                                Stream.generate(() -> new TestSelector.Amogus(
+                                Stream.generate(() -> new Amogus(
                                         new Box(io.wispforest.owo.braid.core.Color.hsv(random.nextDouble(), .75, 1)),
                                         new Box(Color.WHITE.toBraid()),
                                         8
@@ -143,7 +143,7 @@ public class UwuClient implements ClientModInitializer {
         });
 
         Uwu.CHANNEL.registerClientbound(Uwu.OtherTestMessage.class, (message, access) -> {
-            access.player().displayClientMessage(Component.nullToEmpty("Message '" + message.message() + "' from " + message.pos()), false);
+            access.player().sendSystemMessage(Component.nullToEmpty("Message '" + message.message() + "' from " + message.pos()));
         });
 
         if (Uwu.WE_TESTEN_HANDSHAKE) {
@@ -169,7 +169,7 @@ public class UwuClient implements ClientModInitializer {
 
             instance.adapter.rootComponent.child(
                 UIContainers.horizontalFlow(Sizing.content(), Sizing.content())
-                    .child(UIComponents.entity(Sizing.fixed(20), EntityType.ALLAY, null).<EntityComponent<Allay>>configure(component -> {
+                    .child(UIComponents.entity(Sizing.fixed(20), EntityTypes.ALLAY, null).<EntityComponent<Allay>>configure(component -> {
                         component.allowMouseRotation(true)
                             .scale(.75f);
 
@@ -195,7 +195,7 @@ public class UwuClient implements ClientModInitializer {
             ButtonComponent button;
             instance.adapter.rootComponent.child(
                 (button = UIComponents.button(Component.literal(":)"), buttonComponent -> {
-                    Minecraft.getInstance().player.displayClientMessage(Component.literal("handled screen moment"), false);
+                    Minecraft.getInstance().player.sendSystemMessage(Component.literal("handled screen moment"));
                 })).verticalSizing(Sizing.fixed(12))
             );
 

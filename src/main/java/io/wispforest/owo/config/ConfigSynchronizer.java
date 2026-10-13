@@ -13,7 +13,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -26,7 +26,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Tuple;
+import com.mojang.datafixers.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -82,7 +82,7 @@ public class ConfigSynchronizer {
             config.allOptions().forEach((key, option) -> {
                 if (option.syncMode().ordinal() < targetMode.ordinal()) return;
 
-                FriendlyByteBuf optionBuf = PacketByteBufs.create();
+                FriendlyByteBuf optionBuf = FriendlyByteBufs.create();
                 option.write(optionBuf);
 
                 entry.options().put(key.asString(), optionBuf);
@@ -135,16 +135,16 @@ public class ConfigSynchronizer {
                 });
 
                 var errorMessage = Component.empty();
-                var optionsByConfig = HashMultimap.<String, Tuple<Option<?>, Object>>create();
+                var optionsByConfig = HashMultimap.<String, Pair<Option<?>, Object>>create();
 
-                mismatchedOptions.forEach((option, serverValue) -> optionsByConfig.put(option.configName(), new Tuple<>(option, serverValue)));
+                mismatchedOptions.forEach((option, serverValue) -> optionsByConfig.put(option.configName(), Pair.of(option, serverValue)));
                 for (var configName : optionsByConfig.keys()) {
                     errorMessage.append(TextOps.withFormatting("in config ", ChatFormatting.GRAY)).append(configName).append("\n");
                     for (var option : optionsByConfig.get(configName)) {
-                        errorMessage.append(Component.translatable(option.getA().translationKey()).withStyle(ChatFormatting.YELLOW)).append(" -> ");
-                        errorMessage.append(option.getA().value().toString()).append(TextOps.withFormatting(" (client)", ChatFormatting.GRAY));
+                        errorMessage.append(Component.translatable(option.getFirst().translationKey()).withStyle(ChatFormatting.YELLOW)).append(" -> ");
+                        errorMessage.append(option.getFirst().value().toString()).append(TextOps.withFormatting(" (client)", ChatFormatting.GRAY));
                         errorMessage.append(TextOps.withFormatting(" / ", ChatFormatting.DARK_GRAY));
-                        errorMessage.append(option.getB().toString()).append(TextOps.withFormatting(" (server)", ChatFormatting.GRAY)).append("\n");
+                        errorMessage.append(option.getSecond().toString()).append(TextOps.withFormatting(" (server)", ChatFormatting.GRAY)).append("\n");
                     }
                     errorMessage.append("\n");
                 }
@@ -195,8 +195,8 @@ public class ConfigSynchronizer {
     static {
         var packetCodec = CodecUtils.toPacketCodec(ConfigSyncPacket.ENDEC);
 
-        PayloadTypeRegistry.playS2C().register(ConfigSyncPacket.ID, packetCodec);
-        PayloadTypeRegistry.playC2S().register(ConfigSyncPacket.ID, packetCodec);
+        PayloadTypeRegistry.clientboundPlay().register(ConfigSyncPacket.ID, packetCodec);
+        PayloadTypeRegistry.serverboundPlay().register(ConfigSyncPacket.ID, packetCodec);
 
         var earlyPhase = Owo.id("early");
         ServerPlayConnectionEvents.JOIN.addPhaseOrdering(earlyPhase, Event.DEFAULT_PHASE);

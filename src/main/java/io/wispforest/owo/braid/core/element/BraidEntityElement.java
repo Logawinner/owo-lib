@@ -5,11 +5,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3x2f;
 import org.joml.Matrix4f;
@@ -72,27 +72,21 @@ public record BraidEntityElement(
 
         private final EntityRenderDispatcher renderManager = Minecraft.getInstance().getEntityRenderDispatcher();
 
-        public Renderer(MultiBufferSource.BufferSource vertexConsumers) {
-            super(vertexConsumers);
-        }
-
         @Override
         public Class<BraidEntityElement> getRenderStateClass() {
             return BraidEntityElement.class;
         }
 
         @Override
-        protected void renderToTexture(BraidEntityElement state, PoseStack matrices) {
-            Minecraft.getInstance().gameRenderer.getLighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
+        protected void renderToTexture(BraidEntityElement state, PoseStack matrices, SubmitNodeCollector collector) {
+            Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
             matrices.mulPose(state.transform);
 
             var camera = new CameraRenderState();
             camera.orientation = state.transform.invert().getUnnormalizedRotation(new Quaternionf());
 
-            var dispatcher = Minecraft.getInstance().gameRenderer.getFeatureRenderDispatcher();
-            this.renderManager.submit(state.entityState, camera, 0, 0, 0, matrices, dispatcher.getSubmitNodeStorage());
-            dispatcher.renderAllFeatures();
+            this.renderManager.submit(state.entityState, camera, 0, 0, 0, matrices, collector);
         }
 
         @Override

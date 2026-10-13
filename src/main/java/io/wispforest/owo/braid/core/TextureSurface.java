@@ -1,9 +1,11 @@
 package io.wispforest.owo.braid.core;
 
+import org.joml.Vector4f;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import io.wispforest.owo.Owo;
 import io.wispforest.owo.braid.core.cursor.CursorStyle;
 import io.wispforest.owo.braid.util.BraidGuiRenderer;
@@ -28,7 +30,7 @@ public class TextureSurface implements Surface {
     public final BraidGuiRenderer guiRenderer;
 
     public TextureSurface(int width, int height) {
-        this.target = new TextureTarget("texture surface", width, height, true);
+        this.target = new TextureTarget("texture surface", width, height, GpuFormat.RGBA8_UNORM, GpuFormat.D32_FLOAT);
         this.guiRenderer = new BraidGuiRenderer(Minecraft.getInstance());
 
         this.registeredTexture = new TextureSurfaceTexture();
@@ -84,9 +86,9 @@ public class TextureSurface implements Surface {
     public void beginRendering() {
         RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(
             this.target.getColorTexture(),
-            0x00000000,
+            new Vector4f(0, 0, 0, 0),
             this.target.getDepthTexture(),
-            1
+            0 // Minecraft 26.3 uses reversed depth, matching GuiRenderer and GameRenderer.
         );
     }
 
@@ -100,6 +102,7 @@ public class TextureSurface implements Surface {
 
     @Override
     public void dispose() {
+        this.guiRenderer.close();
         this.target.destroyBuffers();
         Minecraft.getInstance().getTextureManager().release(this.registeredTextureId);
     }

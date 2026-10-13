@@ -1,6 +1,6 @@
 package io.wispforest.owo.braid.widgets.vanilla;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import io.wispforest.owo.braid.core.BraidGraphics;
 import io.wispforest.owo.braid.core.Constraints;
 import io.wispforest.owo.braid.core.KeyModifiers;
@@ -75,9 +75,7 @@ public class VanillaWidgetWrapper<T extends Renderable & GuiEventListener> exten
 
         @Override
         public void draw(BraidGraphics graphics) {
-            widget.wrapped.render(graphics, (int) x, (int) y, host().client().getDeltaTracker().getGameTimeDeltaPartialTick(false));
-
-            GlStateManager._enableScissorTest();
+            widget.wrapped.extractRenderState(graphics, (int) x, (int) y, host().client().getDeltaTracker().getGameTimeDeltaPartialTick(false));
         }
 
         public boolean onKeyDown(int keyCode, KeyModifiers modifiers) {
@@ -89,7 +87,7 @@ public class VanillaWidgetWrapper<T extends Renderable & GuiEventListener> exten
         }
 
         public boolean onChar(int charCode, KeyModifiers modifiers) {
-            return widget.wrapped.charTyped(new CharacterEvent(charCode, modifiers.bitMask()));
+            return widget.wrapped.charTyped(new CharacterEvent(charCode));
         }
 
         public void onFocusGained() {

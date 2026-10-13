@@ -61,11 +61,11 @@ public final class ItemGroupButton implements OwoItemGroup.ButtonDefinition {
     public static ItemGroupButton link(CreativeModeTab group, Icon icon, String name, String url) {
         return new ItemGroupButton(group, icon, name, () -> {
             final var client = Minecraft.getInstance();
-            var screen = client.screen;
-            client.setScreen(new ConfirmLinkScreen(confirmed -> {
-                if (confirmed) Util.getPlatform().openUri(url);
-                client.setScreen(screen);
-            }, url, true));
+            var screen = client.gui.screen();
+            client.setScreenAndShow(new ConfirmLinkScreen(confirmed -> {
+                if (confirmed) com.mojang.blaze3d.Blaze3D.openUri(java.net.URI.create(url));
+                client.setScreenAndShow(screen);
+            }, java.net.URI.create(url), true));
         });
     }
 

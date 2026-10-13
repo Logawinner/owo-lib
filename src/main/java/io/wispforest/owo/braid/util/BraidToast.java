@@ -12,7 +12,7 @@ import io.wispforest.owo.braid.framework.widget.Widget;
 import io.wispforest.owo.braid.widgets.basic.Align;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -53,11 +53,11 @@ public class BraidToast implements Toast {
     }
 
     public static void show(@Nullable Duration timeout, @Nullable Object token, Widget widget) {
-        Minecraft.getInstance().getToastManager().addToast(new BraidToast(timeout, token, widget));
+        Minecraft.getInstance().gui.toastManager().addToast(new BraidToast(timeout, token, widget));
     }
 
     public static void hideWithToken(Object token) {
-        var toast = Minecraft.getInstance().getToastManager().getToast(BraidToast.class, token);
+        var toast = Minecraft.getInstance().gui.toastManager().getToast(BraidToast.class, token);
         if (toast != null) {
             toast.visibility = Visibility.HIDE;
         }
@@ -78,7 +78,7 @@ public class BraidToast implements Toast {
     }
 
     @Override
-    public void render(GuiGraphics graphics, Font font, long startTime) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, Font font, long fullyVisibleForMs) {
         this.app.draw(graphics);
     }
 

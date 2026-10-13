@@ -8,7 +8,10 @@ import io.wispforest.owo.braid.widgets.eventstream.BraidEventSource;
 import io.wispforest.owo.braid.widgets.eventstream.BraidEventStream;
 import net.minecraft.util.Unit;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLVideo;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BraidInspector {
 
@@ -17,8 +20,8 @@ public class BraidInspector {
     public WidgetInstance<?> rootInstance;
 
     private final BraidEventStream<Unit> refreshEvents = new BraidEventStream<>();
-    private final BraidEventStream<Unit> pickEvents = new BraidEventStream<>();
-    private final BraidEventStream<RevealInstanceEvent> revealEvents = new BraidEventStream<>();
+    private final BraidEventStream<PickEvent> pickEvents = new BraidEventStream<>();
+    private final BraidEventStream<RevealEvent> revealEvents = new BraidEventStream<>();
 
     private boolean active = false;
     @Nullable AppState currentApp;
@@ -28,19 +31,20 @@ public class BraidInspector {
         this.subject = subject;
     }
 
-    public BraidEventSource<Unit> onPick() {
+    public BraidEventSource<PickEvent> onPick() {
         return this.pickEvents.source();
     }
 
-    public void pick() {
-        this.pickEvents.sink().onEvent(Unit.INSTANCE);
+    public void pick(PickEvent event) {
+        this.pickEvents.sink().onEvent(event);
+        if (currentWindow != null && event == PickEvent.START) SDLVideo.SDL_MinimizeWindow(currentWindow.backendWindow.handle());
     }
 
     public BraidEventSource<Unit> onRefresh() {
         return this.refreshEvents.source();
     }
 
-    public BraidEventSource<RevealInstanceEvent> onReveal() {
+    public BraidEventSource<RevealEvent> onReveal() {
         return this.revealEvents.source();
     }
 
@@ -50,7 +54,7 @@ public class BraidInspector {
         }
 
         if (this.currentApp != null) {
-            GLFW.glfwShowWindow(this.currentWindow.handle);
+            SDLVideo.SDL_ShowWindow(this.currentWindow.backendWindow.handle());
             return;
         }
 
@@ -64,12 +68,13 @@ public class BraidInspector {
             new InspectorWidget(this.rootProxy, this.rootInstance, this)
         );
 
-        GLFW.glfwSetWindowAttrib(result.window().handle, GLFW.GLFW_FLOATING, GLFW.GLFW_TRUE);
+        SDLVideo.SDL_SetWindowAlwaysOnTop(result.window().backendWindow.handle(), true);
 
         this.currentApp = result.state();
         this.currentWindow = result.window();
 
         this.currentApp.onTerminate(() -> {
+            this.pick(PickEvent.STOP);
             this.currentApp = null;
             this.currentWindow = null;
             this.active = false;
@@ -78,7 +83,8 @@ public class BraidInspector {
 
     public void revealInstance(WidgetInstance<?> instance) {
         if (!this.active) return;
-        this.revealEvents.sink().onEvent(new RevealInstanceEvent(instance));
+        this.revealEvents.sink().onEvent(new RevealEvent(instance));
+        if (currentWindow != null) SDLVideo.SDL_ShowWindow(currentWindow.backendWindow.handle());
     }
 
     public void refresh() {
@@ -89,4 +95,6 @@ public class BraidInspector {
         if (this.currentApp == null) return;
         this.currentApp.scheduleShutdown();
     }
+
+    public enum PickEvent {START, STOP}
 }

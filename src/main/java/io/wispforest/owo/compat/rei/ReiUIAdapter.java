@@ -5,11 +5,11 @@ import io.wispforest.owo.ui.core.ParentUIComponent;
 import io.wispforest.owo.ui.core.Sizing;
 import me.shedaniel.math.Point;
 import me.shedaniel.math.Rectangle;
+import me.shedaniel.rei.api.client.gui.compat.GuiGraphics;
 import me.shedaniel.rei.api.client.gui.widgets.Widget;
 import me.shedaniel.rei.api.client.gui.widgets.WidgetWithBounds;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -20,6 +20,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// TODO: even even more REI stuff to fix
 public class ReiUIAdapter<T extends ParentUIComponent> extends Widget {
 
     public static final Point LAYOUT = new Point(-69, -69);
@@ -30,11 +31,11 @@ public class ReiUIAdapter<T extends ParentUIComponent> extends Widget {
         this.adapter = OwoUIAdapter.createWithoutScreen(bounds.x, bounds.y, bounds.width, bounds.height, rootComponentMaker);
         this.adapter.inspectorZOffset = 900;
 
-        var screenWithREI = Minecraft.getInstance().screen;
+        var screenWithREI = Minecraft.getInstance().gui.screen();
 
         if (screenWithREI != null) {
             ScreenEvents.remove(screenWithREI).register(screen -> this.adapter.dispose());
-            ScreenEvents.afterRender(screenWithREI).register((screen, drawContext, mouseX, mouseY, tickDelta) -> {
+            ScreenEvents.afterExtract(screenWithREI).register((screen, drawContext, mouseX, mouseY, tickDelta) -> {
                 this.adapter.drawTooltip(drawContext, mouseX, mouseY, tickDelta);
             });
         }
@@ -101,7 +102,7 @@ public class ReiUIAdapter<T extends ParentUIComponent> extends Widget {
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
         context.enableScissor(this.adapter.x(), this.adapter.y(), this.adapter.width(), this.adapter.height());
-        this.adapter.render(context, mouseX, mouseY, partialTicks);
+        this.adapter.extractRenderState(context, mouseX, mouseY, partialTicks);
         context.disableScissor();
     }
 

@@ -1,5 +1,6 @@
 package io.wispforest.owo.ui.component;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.math.Axis;
@@ -19,8 +20,8 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.CommonListenerCookie;
 import net.minecraft.client.multiplayer.LevelLoadTracker;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.multiplayer.chat.ChatAbilities;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.telemetry.TelemetryEventSender;
@@ -39,7 +40,6 @@ import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.level.storage.TagValueInput;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import org.lwjgl.glfw.GLFW;
 import org.w3c.dom.Element;
 
 import java.time.Duration;
@@ -49,7 +49,6 @@ import java.util.function.Consumer;
 public class EntityComponent<E extends Entity> extends BaseUIComponent {
 
     protected final EntityRenderDispatcher manager;
-    protected final MultiBufferSource.BufferSource entityBuffers;
     protected final E entity;
 
     protected float mouseRotation = 0;
@@ -63,9 +62,9 @@ public class EntityComponent<E extends Entity> extends BaseUIComponent {
     protected EntityComponent(Sizing sizing, E entity) {
         final var client = Minecraft.getInstance();
         this.manager = client.getEntityRenderDispatcher();
-        this.entityBuffers = client.renderBuffers().bufferSource();
 
         this.entity = entity;
+        this.entity.setId(-1);
 
         this.sizing(sizing);
     }
@@ -74,9 +73,9 @@ public class EntityComponent<E extends Entity> extends BaseUIComponent {
     protected EntityComponent(Sizing sizing, EntityType<E> type, @Nullable CompoundTag nbt) {
         final var client = Minecraft.getInstance();
         this.manager = client.getEntityRenderDispatcher();
-        this.entityBuffers = client.renderBuffers().bufferSource();
 
         this.entity = type.create(client.level, EntitySpawnReason.BREEDING);
+        this.entity.setId(-1);
         if (nbt != null) entity.load(TagValueInput.create(new ProblemReporter.ScopedCollector(Owo.LOGGER), client.level.registryAccess(), nbt));
         entity.absSnapTo(client.player.getX(), client.player.getY(), client.player.getZ());
 
@@ -123,7 +122,7 @@ public class EntityComponent<E extends Entity> extends BaseUIComponent {
             entityState.nameTagAttachment = null;
         }
 
-        graphics.guiRenderState.submitPicturesInPictureState(new EntityElementRenderState(
+        graphics.guiRenderState.addPicturesInPictureState(new EntityElementRenderState(
             entityState,
             matrix,
             new ScreenRectangle(this.x, this.y, this.width, this.height),
@@ -133,7 +132,7 @@ public class EntityComponent<E extends Entity> extends BaseUIComponent {
 
     @Override
     public boolean onMouseDrag(MouseButtonEvent click, double deltaX, double deltaY) {
-        if (this.allowMouseRotation && click.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (this.allowMouseRotation && click.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             this.mouseRotation += deltaX;
 
             super.onMouseDrag(click, deltaX, deltaY);
@@ -250,20 +249,28 @@ public class EntityComponent<E extends Entity> extends BaseUIComponent {
         protected PlayerSkin skinTextures;
 
         protected RenderablePlayerEntity(GameProfile profile) {
-            super(Minecraft.getInstance(),
+            super(
+                Minecraft.getInstance(),
                 Minecraft.getInstance().level,
                 new ClientPacketListener(Minecraft.getInstance(),
                     new net.minecraft.network.Connection(PacketFlow.CLIENTBOUND),
                     new CommonListenerCookie(
                         new LevelLoadTracker(0),
-                        profile, new WorldSessionTelemetryManager(TelemetryEventSender.DISABLED, false, Duration.ZERO, ""),
+                        profile, new WorldSessionTelemetryManager(TelemetryEventSender.DISABLED, false, Duration.ZERO, "", null),
                         Minecraft.getInstance().level.registryAccess().freeze(),
                         Minecraft.getInstance().level.enabledFeatures(),
                         "Wisp Forest Enterprises", null, null, Map.of(), null, Map.of(), ServerLinks.EMPTY, Map.of(),
                         true
                     )),
-                null, null, Input.EMPTY, false
+                null,
+                null,
+                Input.EMPTY,
+                false,
+                ChatAbilities.NO_RESTRICTIONS,
+                new net.minecraft.client.player.ItemActivation()
             );
+
+            this.setId(1_000_000 + (int) (Math.random() * 10000));
 
             this.skinTextures = DefaultPlayerSkin.get(profile);
             Util.backgroundExecutor().execute(() -> {
