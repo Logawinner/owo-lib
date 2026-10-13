@@ -95,11 +95,11 @@ public class InstanceTreeView extends StatefulWidget {
                 this.builtOnce = true;
 
                 var lastRevealEvent = SharedState.getWithoutDependency(context, InspectorState.class).lastRevealEvent;
-                if (lastRevealEvent != null && lastRevealEvent.instance == this.widget().viewInstance) {
+                if (lastRevealEvent != null && lastRevealEvent.target() == this.widget().viewInstance) {
                     this.reveal();
                 }
 
-                startCollapsed = lastRevealEvent == null || !lastRevealEvent.fullPath.contains(this.widget().viewInstance);
+                startCollapsed = lastRevealEvent == null || !lastRevealEvent.path().contains(this.widget().viewInstance);
             }
 
             return new AnimatedBox(
